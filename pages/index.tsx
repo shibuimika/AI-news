@@ -85,38 +85,43 @@ export default function Home() {
         }
         
         const url = `https://newsapi.org/v2/everything?q=AI&sortBy=publishedAt&pageSize=10&language=en&apiKey=${apiKey}`;
+        console.log('🌐 Request URL:', url.replace(apiKey, '[HIDDEN]'));
         
+        // User-Agentヘッダーを削除してシンプルなリクエストに
         const response = await fetch(url, {
           method: 'GET',
-          headers: {
-            'User-Agent': 'AI-News-App/1.0'
-          }
+          // ヘッダーを削除してブラウザのデフォルトを使用
         });
         
         console.log('📡 Response status:', response.status);
+        console.log('📡 Response ok:', response.ok);
+        console.log('📡 Response type:', response.type);
         
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Error response:', errorText);
-          
-          // NewsAPIエラーの場合、モックデータにフォールバック
-          if (response.status === 426 || response.status === 401 || response.status === 429) {
-            console.log('🔄 NewsAPIエラーのため、モックデータを使用します');
-            setArticles(mockArticles);
-            setUsesMockData(true);
-            setError(null);
-            return;
+          let errorText = '';
+          try {
+            errorText = await response.text();
+            console.error('❌ Error response body:', errorText);
+          } catch (e) {
+            console.error('❌ Could not read error response:', e);
           }
           
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          console.log('🔄 API error detected, switching to mock data');
+          setArticles(mockArticles);
+          setUsesMockData(true);
+          setError(null);
+          return;
         }
         
         const data = await response.json();
-        console.log('✅ Data received:', data.articles?.length, 'articles');
+        console.log('✅ Data received successfully');
+        console.log('📊 Response keys:', Object.keys(data));
+        console.log('📈 Total results:', data.totalResults);
+        console.log('📰 Articles count:', data.articles?.length || 0);
         
         if (data.status === 'error') {
-          // NewsAPIエラーの場合もモックデータにフォールバック
-          console.log('�� NewsAPIエラーのため、モックデータを使用します');
+          console.error('❌ NewsAPI returned error status:', data.message);
+          console.log('🔄 Switching to mock data due to API error');
           setArticles(mockArticles);
           setUsesMockData(true);
           setError(null);
@@ -124,16 +129,24 @@ export default function Home() {
         }
         
         if (!data.articles || !Array.isArray(data.articles)) {
+          console.error('❌ Invalid articles data:', typeof data.articles);
           throw new Error('Invalid response from NewsAPI');
         }
         
+        console.log('🎉 Successfully using real NewsAPI data!');
         setArticles(data.articles);
         setError(null);
         setUsesMockData(false);
         
       } catch (err: any) {
-        console.error('❌ Fetch error:', err);
-        console.log('🔄 エラーのため、モックデータを使用します');
+        console.error('❌ Fetch error details:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
+        
+        // ネットワークエラーやCORSエラーの場合もモックデータにフォールバック
+        console.log('🔄 Exception caught, using mock data as fallback');
         setArticles(mockArticles);
         setUsesMockData(true);
         setError(null);
@@ -208,6 +221,15 @@ export default function Home() {
             <p className="text-yellow-800 text-sm">
               🔄 <strong>モックデータを表示中</strong> - NewsAPIの制限により、サンプルデータを表示しています。
               新しいAPIキーを設定すると、リアルタイムニュースが表示されます。
+            </p>
+          </div>
+        )}
+        
+        {/* リアルデータ使用時の成功通知 */}
+        {!usesMockData && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-green-800 text-sm">
+              ✅ <strong>リアルタイムニュース表示中</strong> - NewsAPIから最新のAIニュースを取得しています！
             </p>
           </div>
         )}
