@@ -19,7 +19,14 @@ export default function Home() {
       try {
         console.log('🚀 Fetching news directly from NewsAPI...');
         
-        const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
+        // 複数の環境変数パターンを試行
+        const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY || 
+                      (typeof window !== 'undefined' && (window as any).env?.NEXT_PUBLIC_NEWS_API_KEY) ||
+                      '7efa2618d1d14e01af91446ec7181fe7';
+        
+        console.log('🔑 API Key available:', !!apiKey);
+        console.log('🔑 API Key source:', process.env.NEXT_PUBLIC_NEWS_API_KEY ? 'env' : 'fallback');
+        
         if (!apiKey) {
           throw new Error('APIキーが設定されていません');
         }
@@ -82,6 +89,11 @@ export default function Home() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-800 font-semibold">⚠️ エラーが発生しました</p>
             <p className="text-red-600 mt-2">{error}</p>
+            <div className="mt-3 text-xs text-gray-600">
+              <p>🔍 デバッグ情報:</p>
+              <p>• NEXT_PUBLIC_NEWS_API_KEY: {process.env.NEXT_PUBLIC_NEWS_API_KEY ? '設定済み' : '未設定'}</p>
+              <p>• User Agent: {typeof window !== 'undefined' ? window.navigator.userAgent.substring(0, 50) : 'SSR'}</p>
+            </div>
             <button 
               onClick={() => window.location.reload()} 
               className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
