@@ -3,19 +3,17 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   
-  // Netlify対応設定
+  // 静的エクスポート設定
+  output: 'export',
   trailingSlash: true,
   images: {
     unoptimized: true,
   },
   
-  // 環境変数の設定
+  // 環境変数をクライアントサイドで使用可能にする
   env: {
-    NEWS_API_KEY: process.env.NEWS_API_KEY,
+    NEXT_PUBLIC_NEWS_API_KEY: process.env.NEWS_API_KEY,
   },
-  
-  // 静的エクスポート設定（必要に応じて）
-  // output: 'export',
 }
 
 module.exports = nextConfig

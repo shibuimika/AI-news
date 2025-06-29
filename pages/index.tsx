@@ -5,6 +5,8 @@ type Article = {
   publishedAt: string;
   url: string;
   source: { name: string };
+  urlToImage?: string;
+  description?: string;
 };
 
 export default function Home() {
@@ -15,43 +17,39 @@ export default function Home() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        console.log('🚀 Fetching news...');
+        console.log('🚀 Fetching news directly from NewsAPI...');
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒タイムアウト
+        const apiKey = process.env.NEXT_PUBLIC_NEWS_API_KEY;
+        if (!apiKey) {
+          throw new Error('APIキーが設定されていません');
+        }
         
-        const response = await fetch('/api/news', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal
-        });
+        const url = `https://newsapi.org/v2/everything?q=AI&sortBy=publishedAt&pageSize=10&language=en&apiKey=${apiKey}`;
         
-        clearTimeout(timeoutId);
-        
-        console.log('📡 Response received:', response.status);
+        const response = await fetch(url);
+        console.log('📡 Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log('✅ Data received:', data.length, 'articles');
+        console.log('✅ Data received:', data.articles?.length, 'articles');
         
-        setArticles(data);
+        if (data.status === 'error') {
+          throw new Error(`NewsAPI Error: ${data.message}`);
+        }
+        
+        if (!data.articles || !Array.isArray(data.articles)) {
+          throw new Error('Invalid response from NewsAPI');
+        }
+        
+        setArticles(data.articles);
         setError(null);
         
       } catch (err: any) {
         console.error('❌ Fetch error:', err);
-        
-        if (err.name === 'AbortError') {
-          setError('リクエストがタイムアウトしました（10秒）');
-        } else if (err.message.includes('Failed to fetch')) {
-          setError('サーバーとの接続に失敗しました。ページを再読み込みしてください。');
-        } else {
-          setError(`エラー: ${err.message}`);
-        }
+        setError(`エラー: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -117,6 +115,14 @@ export default function Home() {
         <ul className="space-y-4">
           {articles.map((article, i) => (
             <li key={i} className="bg-white p-4 rounded-xl shadow hover:shadow-md transition-shadow">
+              {article.urlToImage && (
+                <img 
+                  src={article.urlToImage} 
+                  alt={article.title}
+                  className="w-full h-48 object-cover rounded-lg mb-3"
+                  loading="lazy"
+                />
+              )}
               <a 
                 href={article.url} 
                 target="_blank" 
@@ -125,6 +131,9 @@ export default function Home() {
               >
                 {article.title}
               </a>
+              {article.description && (
+                <p className="text-gray-700 mt-2 text-sm">{article.description}</p>
+              )}
               <p className="text-sm text-gray-500 mt-2">
                 {new Date(article.publishedAt).toLocaleString('ja-JP')} / {article.source.name}
               </p>
