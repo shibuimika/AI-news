@@ -70,7 +70,7 @@ export default function Home() {
         
         // 環境変数が設定されていない場合のフォールバック
         if (!apiKey || apiKey.trim() === '') {
-          apiKey = '7efa2618d1d14e01af91446ec7181fe7';
+          apiKey = '5d88b85486d641faba9a410aca9c138b';
           keySource = 'fallback';
           console.log('⚠️ 環境変数未設定のため、フォールバックAPIキーを使用');
         }
